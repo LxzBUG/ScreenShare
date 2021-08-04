@@ -1,0 +1,3 @@
+include ':screenShareKit'
+include ':app'
+rootProject.name = "ScreenShare"
