@@ -1,0 +1,2 @@
+# ScreenShare
+一行代码实现Android屏幕采集并编码H264
