@@ -1,8 +1,9 @@
 plugins {
     id 'com.android.library'
     id 'kotlin-android'
+    id "com.github.dcendents.android-maven"
 }
-
+group='com.github.LxzBUG'
 android {
     compileSdkVersion 30
     buildToolsVersion "30.0.3"
@@ -11,7 +12,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 30
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
