@@ -37,7 +37,7 @@ allprojects {
 
 ```
 dependencies {
-	   implementation 'com.github.LxzBUG:ScreenShare:1.0.0'
+    implementation 'com.github.LxzBUG:ScreenShare:1.0.0'
 }
 ```
 
