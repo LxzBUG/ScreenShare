@@ -1,14 +1,46 @@
 <p align="center"><img src="https://img-blog.csdnimg.cn/20210804173939408.png" alt="1600" width="15%"/></p>
 
 <p align="center">
-    <strong>一行代码实现安卓屏幕采集编码</strong>
+    <strong>🌴一行代码实现安卓屏幕采集编码</strong><br>
+ <img src="https://img-blog.csdnimg.cn/20210804181338740.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzE1NzQxNjAz,size_16,color_FFFFFF,t_70" width="350"/>
 </p>
 
 
-## 功能
-- 快速实现 Android 屏幕流数据采集并硬编码
+
+<p align="center">
+<a href="https://jitpack.io/##LxzBUG/ScreenShare"><img src="https://jitpack.io/v/LxzBUG/ScreenShare.svg"/></a>
+<img src="https://img.shields.io/badge/language-kotlin-orange.svg"/>
+<img src="https://img.shields.io/badge/license-Apache-blue"/>
+</p>
+
+## 特点
+
+- 适配安卓高版本
+- 使用 MediaCodec 异步硬编码
+- 通知栏显示
+- 链式调用
 
 ## 安装
+
+在项目根目录的 build.gradle 添加仓库
+
+```groovy
+allprojects {
+    repositories {
+        // ...
+        maven { url 'https://jitpack.io' }
+    }
+}
+```
+
+在 module 的 build.gradle 添加依赖
+
+```
+dependencies {
+	   implementation 'com.github.LxzBUG:ScreenShare:1.0.0'
+}
+```
+
 
 
 ## License

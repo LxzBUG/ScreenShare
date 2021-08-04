@@ -19,9 +19,6 @@ import android.util.Log
 import android.view.Display
 import android.view.Surface
 import android.view.WindowManager
-import org.ar.rtc.IRtcEngineEventHandler
-import org.ar.rtc.RtcEngine
-import org.ar.rtc.video.ARVideoFrame
 import java.nio.ByteBuffer
 import java.util.*
 

@@ -15,15 +15,17 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        ScreenShareKit.init(this)
-            .onError { info ->
-                Log.d("ScreenShareKit onError", info.message)
-            }
-            .onH264 { buffer, isKeyFrame, ts ->
 
-                Log.d("ScreenShareKit onH264", ts.toString())
+
+
+        ScreenShareKit.init(this)
+            .onH264 {buffer, isKeyFrame, ts ->
 
             }.start()
+
+
+
+
 
     }
 }
