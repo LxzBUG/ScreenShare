@@ -15,7 +15,7 @@ object ScreenShareKit{
     fun init(activity: FragmentActivity) = EncodeBuilder(fragment, activity).also { encodeBuilder = it }
 
 
-   fun  init(fragment: Fragment) = EncodeBuilder(fragment,activity).also { encodeBuilder =it }
+    fun init(fragment: Fragment) = EncodeBuilder(fragment,activity).also { encodeBuilder =it }
 
     fun stop(){
         encodeBuilder.stop()

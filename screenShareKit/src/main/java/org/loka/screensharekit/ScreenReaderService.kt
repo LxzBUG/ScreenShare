@@ -19,6 +19,7 @@ import android.util.Log
 import android.view.Display
 import android.view.Surface
 import android.view.WindowManager
+import java.lang.IllegalStateException
 import java.nio.ByteBuffer
 import java.util.*
 
@@ -76,8 +77,15 @@ class ScreenReaderService : Service() {
                 index: Int,
                 info: MediaCodec.BufferInfo
             ) {
-
-                val outputBuffer = codec.getOutputBuffer(index)
+                val outputBuffer:ByteBuffer?
+                try {
+                     outputBuffer = codec.getOutputBuffer(index)
+                     if (outputBuffer == null){
+                         return
+                     }
+                }catch (e:IllegalStateException){
+                    return
+                }
                 val keyFrame = (info.flags and  MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0
                 if (keyFrame){
                     configData = ByteBuffer.allocate(info.size)
