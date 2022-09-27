@@ -33,9 +33,9 @@ class ScreenReaderService : Service() {
     private var mVirtualDisplay: VirtualDisplay? = null
     private var mDensity = 0
 
-    private lateinit var codec: MediaCodec
-    private lateinit var surface: Surface
-    private lateinit var configData: ByteBuffer
+    private var codec: MediaCodec?=null
+    private var surface: Surface?=null
+    private var configData: ByteBuffer?=null
 
     private val encodeBuilder by lazy { ScreenShareKit.encodeBuilder }
 
@@ -57,58 +57,56 @@ class ScreenReaderService : Service() {
 
     private fun initMediaCodec() {
         val format = MediaFormat.createVideoFormat(MIME, encodeBuilder.encodeConfig.width, encodeBuilder.encodeConfig.height)
-        format.setInteger(
-            MediaFormat.KEY_COLOR_FORMAT,
-            MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface
-        ) //颜色格式
-        format.setInteger(MediaFormat.KEY_BIT_RATE, encodeBuilder.encodeConfig.bitrate) //码流
-        format.setInteger(
-            MediaFormat.KEY_BITRATE_MODE,
-            MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR
-        );
-        format.setInteger(MediaFormat.KEY_FRAME_RATE, encodeBuilder.encodeConfig.frameRate) //帧数
-        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1)
+        format.apply {
+            setInteger(MediaFormat.KEY_COLOR_FORMAT,MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface) //颜色格式
+            setInteger(MediaFormat.KEY_BIT_RATE, encodeBuilder.encodeConfig.bitrate) //码流
+            setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR)
+            setInteger(MediaFormat.KEY_FRAME_RATE, encodeBuilder.encodeConfig.frameRate) //帧数
+            setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1)
+        }
         codec = MediaCodec.createEncoderByType(MIME)
-        codec.setCallback(object : MediaCodec.Callback() {
-            override fun onInputBufferAvailable(codec: MediaCodec, index: Int) {
-            }
-            override fun onOutputBufferAvailable(
-                codec: MediaCodec,
-                index: Int,
-                info: MediaCodec.BufferInfo
-            ) {
-                val outputBuffer:ByteBuffer?
-                try {
-                     outputBuffer = codec.getOutputBuffer(index)
-                     if (outputBuffer == null){
-                         return
-                     }
-                }catch (e:IllegalStateException){
-                    return
+        codec?.let {
+            it.setCallback(object : MediaCodec.Callback() {
+                override fun onInputBufferAvailable(codec: MediaCodec, index: Int) {
                 }
-                val keyFrame = (info.flags and  MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0
-                if (keyFrame){
-                    configData = ByteBuffer.allocate(info.size)
-                    configData.put(outputBuffer)
-                }else{
-                    val data = createOutputBufferInfo(info,index,outputBuffer!!)
-                    encodeBuilder.h264CallBack?.onH264(data.buffer,data.isKeyFrame,data.presentationTimestampUs)
+                override fun onOutputBufferAvailable(
+                    codec: MediaCodec,
+                    index: Int,
+                    info: MediaCodec.BufferInfo
+                ) {
+                    val outputBuffer:ByteBuffer?
+                    try {
+                        outputBuffer = codec.getOutputBuffer(index)
+                        if (outputBuffer == null){
+                            return
+                        }
+                    }catch (e:IllegalStateException){
+                        return
+                    }
+                    val keyFrame = (info.flags and  MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0
+                    if (keyFrame){
+                        configData = ByteBuffer.allocate(info.size)
+                        configData?.put(outputBuffer)
+                    }else{
+                        val data = createOutputBufferInfo(info,index,outputBuffer!!)
+                        encodeBuilder.h264CallBack?.onH264(data.buffer,data.isKeyFrame,encodeBuilder.encodeConfig.width,encodeBuilder.encodeConfig.height,data.presentationTimestampUs)
+                    }
+                    codec.releaseOutputBuffer(index, false)
+
                 }
-                codec.releaseOutputBuffer(index, false)
 
-            }
+                override fun onError(codec: MediaCodec, e: MediaCodec.CodecException) {
+                    encodeBuilder.errorCallBack?.onError(ErrorInfo(-1,e.message.toString()))
+                }
 
-            override fun onError(codec: MediaCodec, e: MediaCodec.CodecException) {
-                encodeBuilder.errorCallBack?.onError(ErrorInfo(-1,e.message.toString()))
-            }
+                override fun onOutputFormatChanged(codec: MediaCodec, format: MediaFormat) {
+                }
 
-            override fun onOutputFormatChanged(codec: MediaCodec, format: MediaFormat) {
-            }
-
-        })
-        codec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
-        surface = codec.createInputSurface()
-        codec.start()
+            })
+            it.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
+            surface = it.createInputSurface()
+            it.start()
+        }
     }
 
 
@@ -117,12 +115,12 @@ class ScreenReaderService : Service() {
         outputBuffer.limit(info.offset+info.size)
         val keyFrame = (info.flags and MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0
         return if (keyFrame){
-            val buffer = ByteBuffer.allocateDirect(configData.capacity()+info.size)
-            configData.rewind()
+            val buffer = ByteBuffer.allocateDirect(configData!!.capacity()+info.size)
+            configData?.rewind()
             buffer.put(configData)
             buffer.put(outputBuffer)
             buffer.position(0)
-            OutputBufferInfo(index,buffer,keyFrame,info.presentationTimeUs,info.size+configData.capacity())
+            OutputBufferInfo(index,buffer,keyFrame,info.presentationTimeUs,info.size+configData!!.capacity())
         }else{
             OutputBufferInfo(index,outputBuffer.slice(),keyFrame,info.presentationTimeUs,info.size)
         }
@@ -202,7 +200,7 @@ class ScreenReaderService : Service() {
     private inner class MediaProjectionStopCallback : MediaProjection.Callback() {
         override fun onStop() {
             mHandler?.post(Runnable {
-                codec.run {
+                codec?.run {
                     stop()
                     release()
                 }

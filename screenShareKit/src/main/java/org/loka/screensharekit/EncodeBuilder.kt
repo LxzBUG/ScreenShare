@@ -27,8 +27,6 @@ class EncodeBuilder(fragment: Fragment?,fragmentActivity: FragmentActivity?) {
             }
         }
         this.fragment = fragment
-        encodeConfig.width = Resources.getSystem().displayMetrics.widthPixels
-        encodeConfig.height = Resources.getSystem().displayMetrics.heightPixels
     }
 
 
