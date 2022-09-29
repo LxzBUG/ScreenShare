@@ -1,8 +1,5 @@
 package org.loka.screensharekit
 
-import android.content.res.Configuration
-import android.content.res.Resources
-import android.media.projection.MediaProjection
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager

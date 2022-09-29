@@ -1,8 +1,5 @@
 package org.loka.screensharekit
 
-import android.content.Intent
-import android.content.res.Configuration
-import androidx.activity.result.ActivityResultRegistry
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 

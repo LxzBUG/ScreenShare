@@ -15,10 +15,7 @@ import android.media.projection.MediaProjectionManager
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.util.Log
-import android.view.Display
 import android.view.Surface
-import android.view.WindowManager
 import java.lang.IllegalStateException
 import java.nio.ByteBuffer
 import java.util.*
