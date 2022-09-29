@@ -29,16 +29,14 @@ class ScreenReaderService : Service() {
 
     private var mMediaProjection: MediaProjection? = null
     private var mHandler: Handler? = null
-    private var mDisplay: Display? = null
     private var mVirtualDisplay: VirtualDisplay? = null
-    private var mDensity = 0
+    private val mDensity by lazy { resources.displayMetrics.densityDpi }
 
     private var codec: MediaCodec?=null
     private var surface: Surface?=null
     private var configData: ByteBuffer?=null
 
     private val encodeBuilder by lazy { ScreenShareKit.encodeBuilder }
-
 
     override fun onCreate() {
         super.onCreate()
@@ -146,11 +144,70 @@ class ScreenReaderService : Service() {
             }else if (isStopCommand(it)){
                 stopProjection()
                 stopSelf()
+            }else if (isResetCommand(it)){
+                screenRotation()
             }
         }
 
 
         return super.onStartCommand(intent, flags, startId)
+    }
+
+    private fun screenRotation(){
+        codec?.stop()
+        codec?.release()
+        val format = MediaFormat.createVideoFormat(MIME, encodeBuilder.encodeConfig.width, encodeBuilder.encodeConfig.height)
+        format.apply {
+            setInteger(MediaFormat.KEY_COLOR_FORMAT,MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface) //颜色格式
+            setInteger(MediaFormat.KEY_BIT_RATE, encodeBuilder.encodeConfig.bitrate) //码流
+            setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR)
+            setInteger(MediaFormat.KEY_FRAME_RATE, encodeBuilder.encodeConfig.frameRate) //帧数
+            setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1)
+        }
+        codec = MediaCodec.createEncoderByType(MIME)
+        codec?.let {
+            it.setCallback(object : MediaCodec.Callback() {
+                override fun onInputBufferAvailable(codec: MediaCodec, index: Int) {
+                }
+                override fun onOutputBufferAvailable(
+                    codec: MediaCodec,
+                    index: Int,
+                    info: MediaCodec.BufferInfo
+                ) {
+                    val outputBuffer:ByteBuffer?
+                    try {
+                        outputBuffer = codec.getOutputBuffer(index)
+                        if (outputBuffer == null){
+                            return
+                        }
+                    }catch (e:IllegalStateException){
+                        return
+                    }
+                    val keyFrame = (info.flags and  MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0
+                    if (keyFrame){
+                        configData = ByteBuffer.allocate(info.size)
+                        configData?.put(outputBuffer)
+                    }else{
+                        val data = createOutputBufferInfo(info,index,outputBuffer!!)
+                        encodeBuilder.h264CallBack?.onH264(data.buffer,data.isKeyFrame,encodeBuilder.encodeConfig.width,encodeBuilder.encodeConfig.height,data.presentationTimestampUs)
+                    }
+                    codec.releaseOutputBuffer(index, false)
+
+                }
+
+                override fun onError(codec: MediaCodec, e: MediaCodec.CodecException) {
+                    encodeBuilder.errorCallBack?.onError(ErrorInfo(-1,e.message.toString()))
+                }
+
+                override fun onOutputFormatChanged(codec: MediaCodec, format: MediaFormat) {
+                }
+
+            })
+            it.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
+            surface = it.createInputSurface()
+            it.start()
+            createVirtualDisplay()
+        }
     }
 
     private fun isStartCommand(intent: Intent): Boolean {
@@ -162,14 +219,15 @@ class ScreenReaderService : Service() {
         return intent.hasExtra(ACTION) && Objects.equals(intent.getStringExtra(ACTION), STOP)
     }
 
+    private fun isResetCommand(intent: Intent): Boolean {
+        return intent.hasExtra(ACTION) && Objects.equals(intent.getStringExtra(ACTION), RESET)
+    }
+
     private fun startProjection(resultCode: Int, data: Intent) {
         val mpManager = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         if (mMediaProjection == null) {
             mMediaProjection = mpManager.getMediaProjection(resultCode, data)
             if (mMediaProjection != null) {
-                mDensity = Resources.getSystem().displayMetrics.densityDpi
-                val windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-                mDisplay = windowManager.defaultDisplay
                 createVirtualDisplay()
                 mMediaProjection?.registerCallback(MediaProjectionStopCallback(), mHandler)
             }
@@ -185,7 +243,7 @@ class ScreenReaderService : Service() {
     }
 
     private fun createVirtualDisplay() {
-        mVirtualDisplay = mMediaProjection!!.createVirtualDisplay(
+        mVirtualDisplay = mMediaProjection?.createVirtualDisplay(
             SCREENCAP_NAME,
             encodeBuilder.encodeConfig.width,
             encodeBuilder.encodeConfig.height,
@@ -218,6 +276,7 @@ class ScreenReaderService : Service() {
        private const val ACTION = "ACTION"
        private const val START = "START"
        private const val STOP = "STOP"
+       private const val RESET = "RESET"
        private const val SCREENCAP_NAME = "screen_cap"
 
         fun getStartIntent(context: Context?, resultCode: Int, data: Intent):Intent{
@@ -232,6 +291,12 @@ class ScreenReaderService : Service() {
                 putExtra(ACTION, STOP)
             }
         }
+
+       fun reset(context: Context?):Intent{
+           return Intent(context, ScreenReaderService::class.java).apply {
+               putExtra(ACTION, RESET)
+           }
+       }
 
     }
 }

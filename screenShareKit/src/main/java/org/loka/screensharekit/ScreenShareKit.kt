@@ -1,6 +1,7 @@
 package org.loka.screensharekit
 
 import android.content.Intent
+import android.content.res.Configuration
 import androidx.activity.result.ActivityResultRegistry
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
@@ -16,6 +17,10 @@ object ScreenShareKit{
 
 
     fun init(fragment: Fragment) = EncodeBuilder(fragment,activity).also { encodeBuilder =it }
+
+    fun screenRotation(isLandscape: Boolean){
+        encodeBuilder.screenRotation(isLandscape)
+    }
 
     fun stop(){
         encodeBuilder.stop()

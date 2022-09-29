@@ -1,5 +1,6 @@
 package org.loka.screensharekit
 
+import android.content.res.Configuration
 import android.content.res.Resources
 import android.media.projection.MediaProjection
 import androidx.fragment.app.Fragment
@@ -75,6 +76,25 @@ class EncodeBuilder(fragment: Fragment?,fragmentActivity: FragmentActivity?) {
 
     fun stop(){
         activity.startService(ScreenReaderService.getStopIntent(activity))
+    }
+    fun screenRotation(isLandscape: Boolean){
+        if (isLandscape){
+            if (encodeConfig.width<encodeConfig.height) {
+                val w = encodeConfig.height
+                val h = encodeConfig.width
+                encodeConfig.width = w
+                encodeConfig.height = h
+            }
+        }else{
+            if (encodeConfig.height<encodeConfig.width) {
+                val w = encodeConfig.height
+                val h = encodeConfig.width
+                encodeConfig.width = w
+                encodeConfig.height = h
+            }
+        }
+        activity.startService(ScreenReaderService.reset(activity))
+
     }
 
     fun config(width:Int = 0,height:Int = 0,frameRate:Int = 0,bitrate:Int = 0):EncodeBuilder{
