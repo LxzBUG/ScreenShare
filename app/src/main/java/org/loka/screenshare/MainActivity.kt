@@ -21,11 +21,6 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        ScreenShareKit.screenRotation(newConfig.orientation==Configuration.ORIENTATION_LANDSCAPE)
-    }
-
     private fun requestCapture() {
         ScreenShareKit.init(this).onH264({ buffer, isKeyFrame, w, h, ts ->
         }).start()
