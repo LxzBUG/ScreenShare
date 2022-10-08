@@ -15,10 +15,6 @@ object ScreenShareKit{
 
     fun init(fragment: Fragment) = EncodeBuilder(fragment,activity).also { encodeBuilder =it }
 
-    fun screenRotation(isLandscape: Boolean){
-        encodeBuilder.screenRotation(isLandscape)
-    }
-
     fun stop(){
         encodeBuilder.stop()
     }

@@ -1,5 +1,7 @@
 package org.loka.screensharekit
 
+import android.content.res.Configuration
+import android.util.Log
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
@@ -9,6 +11,7 @@ import org.loka.screensharekit.callback.H264CallBack
 class EncodeBuilder(fragment: Fragment?,fragmentActivity: FragmentActivity?) {
 
     private lateinit var activity: FragmentActivity
+    private lateinit var orientationListener: OrientationListener
     private var fragment: Fragment? = null
 
     @JvmField
@@ -25,6 +28,11 @@ class EncodeBuilder(fragment: Fragment?,fragmentActivity: FragmentActivity?) {
             }
         }
         this.fragment = fragment
+        orientationListener = object : OrientationListener(activity){
+            override fun onSimpleOrientationChanged(orientation: Int) {
+                screenRotation(orientation== Configuration.ORIENTATION_LANDSCAPE)
+            }
+        }
     }
 
 
@@ -69,12 +77,14 @@ class EncodeBuilder(fragment: Fragment?,fragmentActivity: FragmentActivity?) {
 
     fun start(){
         invisibleFragment.requestMediaProjection(this)
+        orientationListener.enable()
     }
 
     fun stop(){
         activity.startService(ScreenReaderService.getStopIntent(activity))
+        orientationListener.disable()
     }
-    fun screenRotation(isLandscape: Boolean){
+    private fun screenRotation(isLandscape: Boolean){
         if (isLandscape){
             if (encodeConfig.width<encodeConfig.height) {
                 val w = encodeConfig.height

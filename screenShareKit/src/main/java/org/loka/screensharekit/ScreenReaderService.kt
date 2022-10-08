@@ -15,6 +15,7 @@ import android.media.projection.MediaProjectionManager
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.util.Log
 import android.view.Surface
 import java.lang.IllegalStateException
 import java.nio.ByteBuffer
@@ -95,6 +96,10 @@ class ScreenReaderService : Service() {
                 }
 
                 override fun onOutputFormatChanged(codec: MediaCodec, format: MediaFormat) {
+                   val width = format.getInteger(MediaFormat.KEY_WIDTH)
+                    val height = format.getInteger(MediaFormat.KEY_HEIGHT)
+                    Log.d("Screenll","${width}++++${height}")
+
                 }
 
             })
