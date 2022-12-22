@@ -12,6 +12,7 @@ import android.media.MediaCodecInfo
 import android.media.MediaFormat
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
+import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
@@ -59,6 +60,13 @@ class ScreenReaderService : Service() {
             setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR)
             setInteger(MediaFormat.KEY_FRAME_RATE, encodeBuilder.encodeConfig.frameRate) //帧数
             setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1)
+            setLong(MediaFormat.KEY_REPEAT_PREVIOUS_FRAME_AFTER,1000000/45)
+            if (Build.MANUFACTURER.contentEquals("XIAOMI")) {
+                format.setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CQ)
+            } else {
+                format.setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR)
+            }
+            setInteger(MediaFormat.KEY_COMPLEXITY, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR)
         }
         codec = MediaCodec.createEncoderByType(MIME)
         codec?.let {
@@ -96,7 +104,7 @@ class ScreenReaderService : Service() {
                 }
 
                 override fun onOutputFormatChanged(codec: MediaCodec, format: MediaFormat) {
-                   val width = format.getInteger(MediaFormat.KEY_WIDTH)
+                    val width = format.getInteger(MediaFormat.KEY_WIDTH)
                     val height = format.getInteger(MediaFormat.KEY_HEIGHT)
                     Log.d("Screenll","${width}++++${height}")
 
@@ -165,6 +173,13 @@ class ScreenReaderService : Service() {
             setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR)
             setInteger(MediaFormat.KEY_FRAME_RATE, encodeBuilder.encodeConfig.frameRate) //帧数
             setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1)
+            setLong(MediaFormat.KEY_REPEAT_PREVIOUS_FRAME_AFTER,1000000/45)
+            if (Build.MANUFACTURER.contentEquals("XIAOMI")) {
+                format.setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CQ)
+            } else {
+                format.setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR)
+            }
+            setInteger(MediaFormat.KEY_COMPLEXITY, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR)
         }
         codec = MediaCodec.createEncoderByType(MIME)
         codec?.let {
@@ -271,15 +286,15 @@ class ScreenReaderService : Service() {
     }
 
 
-   internal companion object GetIntent{
-       private const val MIME = "Video/AVC"
-       private const val RESULT_CODE = "RESULT_CODE"
-       private const val DATA = "DATA"
-       private const val ACTION = "ACTION"
-       private const val START = "START"
-       private const val STOP = "STOP"
-       private const val RESET = "RESET"
-       private const val SCREENCAP_NAME = "screen_cap"
+    internal companion object GetIntent{
+        private const val MIME = "Video/AVC"
+        private const val RESULT_CODE = "RESULT_CODE"
+        private const val DATA = "DATA"
+        private const val ACTION = "ACTION"
+        private const val START = "START"
+        private const val STOP = "STOP"
+        private const val RESET = "RESET"
+        private const val SCREENCAP_NAME = "screen_cap"
 
         fun getStartIntent(context: Context?, resultCode: Int, data: Intent):Intent{
             return Intent(context, ScreenReaderService::class.java).apply {
@@ -294,11 +309,11 @@ class ScreenReaderService : Service() {
             }
         }
 
-       fun reset(context: Context?):Intent{
-           return Intent(context, ScreenReaderService::class.java).apply {
-               putExtra(ACTION, RESET)
-           }
-       }
+        fun reset(context: Context?):Intent{
+            return Intent(context, ScreenReaderService::class.java).apply {
+                putExtra(ACTION, RESET)
+            }
+        }
 
     }
 }
