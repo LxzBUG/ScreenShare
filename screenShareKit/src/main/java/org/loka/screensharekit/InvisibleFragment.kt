@@ -18,12 +18,12 @@ class InvisibleFragment : Fragment(){
     fun requestMediaProjection(encodeBuilder: EncodeBuilder){
         this.encodeBuilder = encodeBuilder;
         mediaProjectionManager  = activity?.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-        startActivityForResult(mediaProjectionManager?.createScreenCaptureIntent(), 90000)
+        startActivityForResult(mediaProjectionManager?.createScreenCaptureIntent(), 5000)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == 90000){
+        if (requestCode == 5000){
             if (resultCode == Activity.RESULT_CANCELED){
                 encodeBuilder?.errorCallBack?.onError(ErrorInfo(-1,"已取消"))
             }else{
