@@ -1,12 +1,10 @@
 package org.loka.screensharekit
 
-import android.content.res.Configuration
-import android.util.Log
+import android.os.Build
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
-import org.loka.screensharekit.callback.ErrorCallBack
-import org.loka.screensharekit.callback.H264CallBack
+import org.loka.screensharekit.callback.ScreenShareCallBack
 
 class EncodeBuilder(fragment: Fragment?,fragmentActivity: FragmentActivity?):Device.RotationListener{
 
@@ -14,8 +12,7 @@ class EncodeBuilder(fragment: Fragment?,fragmentActivity: FragmentActivity?):Dev
     private var fragment: Fragment? = null
 
     @JvmField
-    var h264CallBack : H264CallBack? = null
-    var errorCallBack : ErrorCallBack? = null
+    var shareCallBack : ScreenShareCallBack? = null
     internal val encodeConfig = EncodeConfig()
     private val device by lazy { Device() }
 
@@ -58,21 +55,20 @@ class EncodeBuilder(fragment: Fragment?,fragmentActivity: FragmentActivity?):Dev
 
 
 
-    fun onH264(callBack: H264CallBack?):EncodeBuilder{
+    fun onShareCallback(callBack: ScreenShareCallBack?):EncodeBuilder{
         return apply {
-            h264CallBack = callBack
-        }
-    }
-
-    fun onError(callBack: ErrorCallBack?):EncodeBuilder{
-        return apply {
-            errorCallBack = callBack
+            shareCallBack = callBack
         }
     }
 
     fun start(){
-        invisibleFragment.requestMediaProjection(this)
-        device.setRotationListener(this)
+        if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.LOLLIPOP){
+            invisibleFragment.requestMediaProjection(this)
+            device.setRotationListener(this)
+        }else{
+            shareCallBack?.onError(ErrorInfo(-3,"当前系统版本不支持"))
+        }
+
     }
 
     fun stop(){

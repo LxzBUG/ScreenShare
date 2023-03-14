@@ -94,14 +94,14 @@ class ScreenReaderService : Service() {
                         configData?.put(outputBuffer)
                     }else{
                         val data = createOutputBufferInfo(info,index,outputBuffer!!)
-                        encodeBuilder.h264CallBack?.onH264(data.buffer,data.isKeyFrame,encodeBuilder.encodeConfig.width,encodeBuilder.encodeConfig.height,data.presentationTimestampUs)
+                        encodeBuilder.shareCallBack?.onH264(data.buffer,data.isKeyFrame,encodeBuilder.encodeConfig.width,encodeBuilder.encodeConfig.height,data.presentationTimestampUs)
                     }
                     codec.releaseOutputBuffer(index, false)
 
                 }
 
                 override fun onError(codec: MediaCodec, e: MediaCodec.CodecException) {
-                    encodeBuilder.errorCallBack?.onError(ErrorInfo(-1,e.message.toString()))
+                    encodeBuilder.shareCallBack?.onError(ErrorInfo(-2,"编码器错误${e.message.toString()}"))
                 }
 
                 override fun onOutputFormatChanged(codec: MediaCodec, format: MediaFormat) {
@@ -207,14 +207,14 @@ class ScreenReaderService : Service() {
                         configData?.put(outputBuffer)
                     }else{
                         val data = createOutputBufferInfo(info,index,outputBuffer!!)
-                        encodeBuilder.h264CallBack?.onH264(data.buffer,data.isKeyFrame,encodeBuilder.encodeConfig.width,encodeBuilder.encodeConfig.height,data.presentationTimestampUs)
+                        encodeBuilder.shareCallBack?.onH264(data.buffer,data.isKeyFrame,encodeBuilder.encodeConfig.width,encodeBuilder.encodeConfig.height,data.presentationTimestampUs)
                     }
                     codec.releaseOutputBuffer(index, false)
 
                 }
 
                 override fun onError(codec: MediaCodec, e: MediaCodec.CodecException) {
-                    encodeBuilder.errorCallBack?.onError(ErrorInfo(-1,e.message.toString()))
+                    encodeBuilder.shareCallBack?.onError(ErrorInfo(-2,"编码器错误${e.message.toString()}"))
                 }
 
                 override fun onOutputFormatChanged(codec: MediaCodec, format: MediaFormat) {
