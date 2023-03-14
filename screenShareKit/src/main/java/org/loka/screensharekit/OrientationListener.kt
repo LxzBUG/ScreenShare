@@ -74,6 +74,7 @@ abstract class OrientationListener : OrientationEventListener {
      */
     private fun initDeviceDefaultOrientation(context: Context): Int {
         val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+
         val config: Configuration = context.getResources().getConfiguration()
         val rotation = windowManager.defaultDisplay.rotation
         val isLand = config.orientation === Configuration.ORIENTATION_LANDSCAPE

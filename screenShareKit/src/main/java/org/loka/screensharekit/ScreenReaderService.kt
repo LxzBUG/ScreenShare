@@ -37,6 +37,7 @@ class ScreenReaderService : Service() {
 
     private val encodeBuilder by lazy { ScreenShareKit.encodeBuilder }
 
+
     override fun onCreate() {
         super.onCreate()
         Thread{
@@ -59,8 +60,8 @@ class ScreenReaderService : Service() {
             setInteger(MediaFormat.KEY_BIT_RATE, encodeBuilder.encodeConfig.bitrate) //码流
             setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR)
             setInteger(MediaFormat.KEY_FRAME_RATE, encodeBuilder.encodeConfig.frameRate) //帧数
-            setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1)
-            setLong(MediaFormat.KEY_REPEAT_PREVIOUS_FRAME_AFTER,1000000/45)
+            setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 10)
+            setLong(MediaFormat.KEY_REPEAT_PREVIOUS_FRAME_AFTER,100_000L)
             if (Build.MANUFACTURER.contentEquals("XIAOMI")) {
                 format.setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CQ)
             } else {
@@ -314,6 +315,6 @@ class ScreenReaderService : Service() {
                 putExtra(ACTION, RESET)
             }
         }
-
     }
+
 }

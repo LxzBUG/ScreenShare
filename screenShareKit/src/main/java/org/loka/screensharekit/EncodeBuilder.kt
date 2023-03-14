@@ -8,16 +8,16 @@ import androidx.fragment.app.FragmentManager
 import org.loka.screensharekit.callback.ErrorCallBack
 import org.loka.screensharekit.callback.H264CallBack
 
-class EncodeBuilder(fragment: Fragment?,fragmentActivity: FragmentActivity?) {
+class EncodeBuilder(fragment: Fragment?,fragmentActivity: FragmentActivity?):Device.RotationListener{
 
     private lateinit var activity: FragmentActivity
-    private lateinit var orientationListener: OrientationListener
     private var fragment: Fragment? = null
 
     @JvmField
     var h264CallBack : H264CallBack? = null
     var errorCallBack : ErrorCallBack? = null
     internal val encodeConfig = EncodeConfig()
+    private val device by lazy { Device() }
 
     init {
         fragmentActivity?.let {
@@ -28,11 +28,6 @@ class EncodeBuilder(fragment: Fragment?,fragmentActivity: FragmentActivity?) {
             }
         }
         this.fragment = fragment
-        orientationListener = object : OrientationListener(activity){
-            override fun onSimpleOrientationChanged(orientation: Int) {
-                screenRotation(orientation== Configuration.ORIENTATION_LANDSCAPE)
-            }
-        }
     }
 
 
@@ -77,12 +72,12 @@ class EncodeBuilder(fragment: Fragment?,fragmentActivity: FragmentActivity?) {
 
     fun start(){
         invisibleFragment.requestMediaProjection(this)
-        orientationListener.enable()
+        device.setRotationListener(this)
     }
 
     fun stop(){
         activity.startService(ScreenReaderService.getStopIntent(activity))
-        orientationListener.disable()
+        device.setRotationListener(null)
     }
     private fun screenRotation(isLandscape: Boolean){
         if (isLandscape){
@@ -120,5 +115,14 @@ class EncodeBuilder(fragment: Fragment?,fragmentActivity: FragmentActivity?) {
         }
         return this
     }
+
+    override fun onRotationChanged(rotation: Int) {
+        if (rotation==3||rotation==1){
+            screenRotation(true)
+        }else{
+            screenRotation(false)
+        }
+    }
+
 
 }
