@@ -36,7 +36,7 @@ class ScreenReaderService : Service() {
     private var configData: ByteBuffer?=null
 
     private val encodeBuilder by lazy { ScreenShareKit.encodeBuilder }
-
+    private var isStop = false
 
     override fun onCreate() {
         super.onCreate()
@@ -80,34 +80,44 @@ class ScreenReaderService : Service() {
                     index: Int,
                     info: MediaCodec.BufferInfo
                 ) {
-                    isCodecRunning = true
-                    val outputBuffer:ByteBuffer?
-                    try {
-                        outputBuffer = codec.getOutputBuffer(index)
-                        if (outputBuffer == null){
+                    synchronized(codec) {
+
+                        isCodecRunning = true
+                        val outputBuffer: ByteBuffer?
+                        try {
+                            outputBuffer = codec.getOutputBuffer(index)
+                            if (outputBuffer == null) {
+                                return
+                            }
+                        } catch (e: IllegalStateException) {
                             return
                         }
-                    }catch (e:IllegalStateException){
-                        return
-                    }
-                    val keyFrame = (info.flags and  MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0
-                    if (keyFrame){
-                        configData = ByteBuffer.allocate(info.size)
-                        configData?.put(outputBuffer)
-                    }else{
-                        val data = createOutputBufferInfo(info,index,outputBuffer!!)
-                        encodeBuilder.shareCallBack?.onH264(data.buffer,data.isKeyFrame,encodeBuilder.encodeConfig.width,encodeBuilder.encodeConfig.height,data.presentationTimestampUs)
-                    }
-                    if (index >= 0) {
-                        // 判断缓冲区是否已经被释放
-                        if ((info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) == 0) {
-                            // 判断编码器是否处于运行状态
-                            if (isCodecRunning) {
-                                codec.releaseOutputBuffer(index, false)
+                        val keyFrame = (info.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0
+                        if (keyFrame) {
+                            configData = ByteBuffer.allocate(info.size)
+                            configData?.put(outputBuffer)
+                        } else {
+                            val data = createOutputBufferInfo(info, index, outputBuffer!!)
+                            encodeBuilder.shareCallBack?.onH264(
+                                data.buffer,
+                                data.isKeyFrame,
+                                encodeBuilder.encodeConfig.width,
+                                encodeBuilder.encodeConfig.height,
+                                data.presentationTimestampUs
+                            )
+                        }
+                        if (index >= 0) {
+                            // 判断缓冲区是否已经被释放
+                            if ((info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) == 0) {
+                                // 判断编码器是否处于运行状态
+                                if (isCodecRunning) {
+                                    if (!isStop) {
+                                        codec.releaseOutputBuffer(index, false)
+                                    }
+                                }
                             }
                         }
                     }
-
 
                 }
 
@@ -154,6 +164,7 @@ class ScreenReaderService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         intent?.let {
             if(isStartCommand(it)){
+                isStop = false
                 val notification = NotificationUtils.getNotification(this)
                 startForeground(notification.first, notification.second)
                 startProjection(
@@ -162,6 +173,7 @@ class ScreenReaderService : Service() {
                     )!!
                 )
             }else if (isStopCommand(it)){
+                isStop = true
                 stopProjection()
                 stopSelf()
             }else if (isResetCommand(it)){
@@ -202,34 +214,43 @@ class ScreenReaderService : Service() {
                     index: Int,
                     info: MediaCodec.BufferInfo
                 ) {
-                    isCodecRunning = true
-                    val outputBuffer:ByteBuffer?
-                    try {
-                        outputBuffer = codec.getOutputBuffer(index)
-                        if (outputBuffer == null){
+                    synchronized(codec) {
+                        isCodecRunning = true
+                        val outputBuffer: ByteBuffer?
+                        try {
+                            outputBuffer = codec.getOutputBuffer(index)
+                            if (outputBuffer == null) {
+                                return
+                            }
+                        } catch (e: IllegalStateException) {
                             return
                         }
-                    }catch (e:IllegalStateException){
-                        return
-                    }
-                    val keyFrame = (info.flags and  MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0
-                    if (keyFrame){
-                        configData = ByteBuffer.allocate(info.size)
-                        configData?.put(outputBuffer)
-                    }else{
-                        val data = createOutputBufferInfo(info,index,outputBuffer!!)
-                        encodeBuilder.shareCallBack?.onH264(data.buffer,data.isKeyFrame,encodeBuilder.encodeConfig.width,encodeBuilder.encodeConfig.height,data.presentationTimestampUs)
-                    }
-                    if (index >= 0) {
-                        // 判断缓冲区是否已经被释放
-                        if ((info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) == 0) {
-                            // 判断编码器是否处于运行状态
-                            if (isCodecRunning) {
-                                codec.releaseOutputBuffer(index, false)
+                        val keyFrame = (info.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0
+                        if (keyFrame) {
+                            configData = ByteBuffer.allocate(info.size)
+                            configData?.put(outputBuffer)
+                        } else {
+                            val data = createOutputBufferInfo(info, index, outputBuffer!!)
+                            encodeBuilder.shareCallBack?.onH264(
+                                data.buffer,
+                                data.isKeyFrame,
+                                encodeBuilder.encodeConfig.width,
+                                encodeBuilder.encodeConfig.height,
+                                data.presentationTimestampUs
+                            )
+                        }
+                        if (index >= 0) {
+                            // 判断缓冲区是否已经被释放
+                            if ((info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) == 0) {
+                                // 判断编码器是否处于运行状态
+                                if (isCodecRunning) {
+                                    if (!isStop) {
+                                        codec.releaseOutputBuffer(index, false)
+                                    }
+                                }
                             }
                         }
                     }
-
                 }
 
                 override fun onError(codec: MediaCodec, e: MediaCodec.CodecException) {
