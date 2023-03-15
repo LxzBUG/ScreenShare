@@ -54,13 +54,14 @@ class ScreenReaderService : Service() {
 
 
     private fun initMediaCodec() {
+        var isCodecRunning = false
         val format = MediaFormat.createVideoFormat(MIME, encodeBuilder.encodeConfig.width, encodeBuilder.encodeConfig.height)
         format.apply {
             setInteger(MediaFormat.KEY_COLOR_FORMAT,MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface) //颜色格式
             setInteger(MediaFormat.KEY_BIT_RATE, encodeBuilder.encodeConfig.bitrate) //码流
             setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR)
             setInteger(MediaFormat.KEY_FRAME_RATE, encodeBuilder.encodeConfig.frameRate) //帧数
-            setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 10)
+            setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 2)
             setLong(MediaFormat.KEY_REPEAT_PREVIOUS_FRAME_AFTER,100_000L)
             if (Build.MANUFACTURER.contentEquals("XIAOMI")) {
                 format.setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CQ)
@@ -79,6 +80,7 @@ class ScreenReaderService : Service() {
                     index: Int,
                     info: MediaCodec.BufferInfo
                 ) {
+                    isCodecRunning = true
                     val outputBuffer:ByteBuffer?
                     try {
                         outputBuffer = codec.getOutputBuffer(index)
@@ -96,18 +98,25 @@ class ScreenReaderService : Service() {
                         val data = createOutputBufferInfo(info,index,outputBuffer!!)
                         encodeBuilder.shareCallBack?.onH264(data.buffer,data.isKeyFrame,encodeBuilder.encodeConfig.width,encodeBuilder.encodeConfig.height,data.presentationTimestampUs)
                     }
-                    codec.releaseOutputBuffer(index, false)
+                    if (index >= 0) {
+                        // 判断缓冲区是否已经被释放
+                        if ((info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) == 0) {
+                            // 判断编码器是否处于运行状态
+                            if (isCodecRunning) {
+                                codec.releaseOutputBuffer(index, false)
+                            }
+                        }
+                    }
+
 
                 }
 
                 override fun onError(codec: MediaCodec, e: MediaCodec.CodecException) {
+                    isCodecRunning = false
                     encodeBuilder.shareCallBack?.onError(ErrorInfo(-2,"编码器错误${e.message.toString()}"))
                 }
 
                 override fun onOutputFormatChanged(codec: MediaCodec, format: MediaFormat) {
-                    val width = format.getInteger(MediaFormat.KEY_WIDTH)
-                    val height = format.getInteger(MediaFormat.KEY_HEIGHT)
-                    Log.d("Screenll","${width}++++${height}")
 
                 }
 
@@ -167,6 +176,7 @@ class ScreenReaderService : Service() {
     private fun screenRotation(){
         codec?.stop()
         codec?.release()
+        var isCodecRunning = false
         val format = MediaFormat.createVideoFormat(MIME, encodeBuilder.encodeConfig.width, encodeBuilder.encodeConfig.height)
         format.apply {
             setInteger(MediaFormat.KEY_COLOR_FORMAT,MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface) //颜色格式
@@ -192,6 +202,7 @@ class ScreenReaderService : Service() {
                     index: Int,
                     info: MediaCodec.BufferInfo
                 ) {
+                    isCodecRunning = true
                     val outputBuffer:ByteBuffer?
                     try {
                         outputBuffer = codec.getOutputBuffer(index)
@@ -209,11 +220,20 @@ class ScreenReaderService : Service() {
                         val data = createOutputBufferInfo(info,index,outputBuffer!!)
                         encodeBuilder.shareCallBack?.onH264(data.buffer,data.isKeyFrame,encodeBuilder.encodeConfig.width,encodeBuilder.encodeConfig.height,data.presentationTimestampUs)
                     }
-                    codec.releaseOutputBuffer(index, false)
+                    if (index >= 0) {
+                        // 判断缓冲区是否已经被释放
+                        if ((info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) == 0) {
+                            // 判断编码器是否处于运行状态
+                            if (isCodecRunning) {
+                                codec.releaseOutputBuffer(index, false)
+                            }
+                        }
+                    }
 
                 }
 
                 override fun onError(codec: MediaCodec, e: MediaCodec.CodecException) {
+                    isCodecRunning = false
                     encodeBuilder.shareCallBack?.onError(ErrorInfo(-2,"编码器错误${e.message.toString()}"))
                 }
 
