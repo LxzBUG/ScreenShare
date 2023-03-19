@@ -25,11 +25,11 @@ class InvisibleFragment : Fragment(){
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == 5000){
             if (resultCode == Activity.RESULT_CANCELED){
-                encodeBuilder?.shareCallBack?.onError(ErrorInfo(-1,"已取消"))
+                encodeBuilder?.errorCallBack?.onError(ErrorInfo(-1,"已取消"))
             }else{
                 if (resultCode == Activity.RESULT_OK){
                     data?.let {
-                        encodeBuilder?.shareCallBack?.onStart()
+                        encodeBuilder?.startCallback?.onStart()
                         activity?.startService(ScreenReaderService.getStartIntent(context,resultCode,data))
                     }
                 }
