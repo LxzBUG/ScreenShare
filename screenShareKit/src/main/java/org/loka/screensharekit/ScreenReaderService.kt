@@ -100,7 +100,7 @@ class ScreenReaderService : Service() {
                     }
                     if (startTs-mLastSendTSMs>intervalTS){
                         rgbaData?.let {
-                            encodeBuilder.rgbaCallback?.onRGBA(it,rowStride/4,height,encodeBuilder.device_rotation,isRotationChange())
+                            encodeBuilder.rgbaCallback?.onRGBA(it,width,height,rowStride/4,encodeBuilder.device_rotation,isRotationChange())
                             mLastSendTSMs = System.currentTimeMillis()
                         }
                     }
