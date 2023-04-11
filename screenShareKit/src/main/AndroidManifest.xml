@@ -3,6 +3,7 @@
     package="org.loka.screensharekit">
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
+
     <application>
         <service
             android:name=".ScreenReaderService"

@@ -4,10 +4,7 @@ import android.os.Build
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
-import org.loka.screensharekit.callback.ErrorCallBack
-import org.loka.screensharekit.callback.H264CallBack
-import org.loka.screensharekit.callback.RGBACallBack
-import org.loka.screensharekit.callback.StartCaptureCallback
+import org.loka.screensharekit.callback.*
 
 class EncodeBuilder(fragment: Fragment?,fragmentActivity: FragmentActivity?):Device.RotationListener{
 
@@ -18,6 +15,7 @@ class EncodeBuilder(fragment: Fragment?,fragmentActivity: FragmentActivity?):Dev
     var h264CallBack : H264CallBack? = null
     var errorCallBack : ErrorCallBack? = null
     var rgbaCallback:RGBACallBack?=null
+    var audioCallBack: AudioCallBack?=null
     var startCallback:StartCaptureCallback?=null
     internal val encodeConfig = EncodeConfig()
     private val device by lazy { Device() }
@@ -73,6 +71,12 @@ class EncodeBuilder(fragment: Fragment?,fragmentActivity: FragmentActivity?):Dev
         }
     }
 
+    fun onAudio(callback:AudioCallBack?):EncodeBuilder{
+        return apply {
+            audioCallBack = callback
+        }
+    }
+
     fun onStart(callBack:StartCaptureCallback?):EncodeBuilder{
         return apply {
             startCallback = callBack
@@ -107,7 +111,9 @@ class EncodeBuilder(fragment: Fragment?,fragmentActivity: FragmentActivity?):Dev
         device.setRotationListener(null)
     }
 
-
+    fun setMicrophoneMute(mute:Boolean){
+        activity.startService(ScreenReaderService.getMuteMicIntent(activity,mute))
+    }
 
     private fun screenRotation(isLandscape: Boolean){
         if (isLandscape){
@@ -129,7 +135,7 @@ class EncodeBuilder(fragment: Fragment?,fragmentActivity: FragmentActivity?):Dev
 
     }
 
-    fun config(width:Int = 0,height:Int = 0,frameRate:Int = 0,bitrate:Int = 0,screenDataType: SCREEN_DATA_TYPE=SCREEN_DATA_TYPE.H264):EncodeBuilder{
+    fun config(width:Int = 0,height:Int = 0,frameRate:Int = 0,bitrate:Int = 0,screenDataType: SCREEN_DATA_TYPE=SCREEN_DATA_TYPE.H264,audioCapture:Boolean = true,sampleRate:Int = 16000,channels:Int = 2):EncodeBuilder{
         if (width>0){
             encodeConfig.width = width
         }
@@ -143,8 +149,17 @@ class EncodeBuilder(fragment: Fragment?,fragmentActivity: FragmentActivity?):Dev
         if (bitrate>0){
             encodeConfig.bitrate = bitrate
         }
-
         this.screenDataType = screenDataType
+
+        if (audioCapture){
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                encodeConfig.audioCapture = audioCapture
+                encodeConfig.sampleRate = sampleRate
+                encodeConfig.channels = channels
+            } else {
+               encodeConfig.audioCapture = false
+            }
+        }
         return this
     }
 

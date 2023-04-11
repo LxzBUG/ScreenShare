@@ -15,9 +15,15 @@ object ScreenShareKit{
 
     fun init(fragment: Fragment) = EncodeBuilder(fragment,activity).also { encodeBuilder =it }
 
+    fun setMicrophoneMute(mute:Boolean){
+        encodeBuilder.setMicrophoneMute(mute)
+    }
+
     fun stop(){
         encodeBuilder.stop()
     }
+
+
 
 
 

@@ -54,6 +54,9 @@ class ScreenReaderService : Service() {
     private var mImgReader: ImageReader? = null
     private var mLastSendTSMs = 0L
 
+    //audio
+    private var  audioCapture :AudioCapture?=null
+
     override fun onCreate() {
         super.onCreate()
         Thread{
@@ -118,6 +121,7 @@ class ScreenReaderService : Service() {
                 }
             }
         }
+        audioCapture?.startRecording()
 
     }
 
@@ -138,6 +142,7 @@ class ScreenReaderService : Service() {
             mVirtualDisplay?.release()
             mImgReader?.close()
         }
+        audioCapture?.stopRecording()
 
     }
 
@@ -267,11 +272,7 @@ class ScreenReaderService : Service() {
                 isStop = false
                 val notification = NotificationUtils.getNotification(this)
                 startForeground(notification.first, notification.second)
-                startProjection(
-                    it.getIntExtra(RESULT_CODE, RESULT_CANCELED), it.getParcelableExtra(
-                        DATA
-                    )!!
-                )
+                startProjection(it.getIntExtra(RESULT_CODE, RESULT_CANCELED), it.getParcelableExtra(DATA)!!)
             }else if (isStopCommand(it)){
                 isStop = true
                 stopProjection()
@@ -281,10 +282,11 @@ class ScreenReaderService : Service() {
                     stopCapture()
                     startCapture(encodeBuilder.encodeConfig.width,encodeBuilder.encodeConfig.height,encodeBuilder.encodeConfig.frameRate)
                 }
+            }else if (isMuteCommand(it)){
+                val mute = it.getBooleanExtra(MUTE,false)
+                audioCapture?.setMicrophoneMute(mute)
             }
         }
-
-
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -301,6 +303,10 @@ class ScreenReaderService : Service() {
     private fun isResetCommand(intent: Intent): Boolean {
         return intent.hasExtra(ACTION) && Objects.equals(intent.getStringExtra(ACTION), RESET)
     }
+    private fun isMuteCommand(intent: Intent): Boolean {
+        return intent.hasExtra(ACTION) && Objects.equals(intent.getStringExtra(ACTION), MUTE)
+    }
+
 
     private fun startProjection(resultCode: Int, data: Intent) {
         val mpManager = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
@@ -308,6 +314,31 @@ class ScreenReaderService : Service() {
             mMediaProjection = mpManager.getMediaProjection(resultCode, data)
             if (mMediaProjection != null) {
                 mMediaProjection?.registerCallback(MediaProjectionStopCallback(), mHandler)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    if (encodeBuilder.encodeConfig.audioCapture){
+                        audioCapture = AudioCapture(encodeBuilder.encodeConfig.channels,encodeBuilder.encodeConfig.sampleRate,mMediaProjection!!,object :AudioRecordErrorCallback{
+                            override fun onWebRtcAudioRecordInitError(var1: String?) {
+                                encodeBuilder.errorCallBack?.onError(ErrorInfo(-5,var1.toString()))
+                            }
+
+                            override fun onWebRtcAudioRecordStartError(
+                                var1: AudioCapture.AudioRecordStartErrorCode?,
+                                var2: String?
+                            ) {
+                                encodeBuilder.errorCallBack?.onError(ErrorInfo(-4,var2.toString()))
+                            }
+
+                            override fun onWebRtcAudioRecordError(var1: String?) {
+                                encodeBuilder.errorCallBack?.onError(ErrorInfo(-3,var1.toString()))
+                            }
+                        },object :AudioFrameListener{
+                            override fun onAudioData(var1: ByteArray) {
+                                encodeBuilder.audioCallBack?.onAudio(var1,System.currentTimeMillis())
+                            }
+
+                        })
+                    }
+                }
                 startCapture(encodeBuilder.encodeConfig.width,encodeBuilder.encodeConfig.height,encodeBuilder.encodeConfig.frameRate)
             }
         }
@@ -371,6 +402,7 @@ class ScreenReaderService : Service() {
         private const val ACTION = "ACTION"
         private const val START = "START"
         private const val STOP = "STOP"
+        private const val MUTE = "MUTE"
         private const val RESET = "RESET"
         private const val SCREENCAP_NAME = "screen_cap"
 
@@ -384,6 +416,13 @@ class ScreenReaderService : Service() {
         fun getStopIntent(context: Context?):Intent{
             return Intent(context, ScreenReaderService::class.java).apply {
                 putExtra(ACTION, STOP)
+            }
+        }
+
+        fun getMuteMicIntent(context: Context?,mute:Boolean):Intent{
+            return Intent(context, ScreenReaderService::class.java).apply {
+                putExtra(ACTION, MUTE)
+                putExtra(MUTE,mute)
             }
         }
 
