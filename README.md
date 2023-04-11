@@ -49,7 +49,7 @@ dependencies {
 
 ```kotlin
 //获取H264数据
-ScreenShareKit.init(this).onH264(object :H264CallBack{
+ScreenShareKit.init(this).config(screenDataType = EncodeBuilder.SCREEN_DATA_TYPE.H264).onH264(object :H264CallBack{
             override fun onH264(
                 buffer: ByteBuffer,
                 isKeyFrame: Boolean,
@@ -64,7 +64,7 @@ ScreenShareKit.init(this).onH264(object :H264CallBack{
         }).start()
 
 //获取RGBA数据
-ScreenShareKit.init(this).onRGBA(object :RGBACallBack{
+ScreenShareKit.init(this).config(screenDataType = EncodeBuilder.SCREEN_DATA_TYPE.RGBA).onRGBA(object :RGBACallBack{
             override fun onRGBA(
                 rgba: ByteArray,
                 width: Int,
@@ -81,7 +81,7 @@ ScreenShareKit.init(this).onRGBA(object :RGBACallBack{
         }).start()
 
 //开启音频捕获
-ScreenShareKit.init(this).config(audioCapture = true).onRGBA(object :RGBACallBack{
+ScreenShareKit.init(this).config(screenDataType = EncodeBuilder.SCREEN_DATA_TYPE.RGBA,audioCapture = true).onRGBA(object :RGBACallBack{
             override fun onRGBA(
                 rgba: ByteArray,
                 width: Int,
