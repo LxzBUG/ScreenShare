@@ -45,6 +45,70 @@ dependencies {
 }
 ```
 
+## 使用
+
+```kotlin
+//获取H264数据
+ScreenShareKit.init(this).onH264(object :H264CallBack{
+            override fun onH264(
+                buffer: ByteBuffer,
+                isKeyFrame: Boolean,
+                width: Int,
+                height: Int,
+                ts: Long
+            ) {
+              //编码后的的数据
+            }
+        }).onStart({
+            //用户同意采集，开始采集数据
+        }).start()
+
+//获取RGBA数据
+ScreenShareKit.init(this).onRGBA(object :RGBACallBack{
+            override fun onRGBA(
+                rgba: ByteArray,
+                width: Int,
+                height: Int,
+                stride: Int,
+                rotation: Int,
+                rotationChanged: Boolean
+            ) {
+                //屏幕截图数据
+            }
+
+        }).onStart({
+            //用户同意采集，开始采集数据
+        }).start()
+
+//开启音频捕获
+ScreenShareKit.init(this).config(audioCapture = true).onRGBA(object :RGBACallBack{
+            override fun onRGBA(
+                rgba: ByteArray,
+                width: Int,
+                height: Int,
+                stride: Int,
+                rotation: Int,
+                rotationChanged: Boolean
+            ) {
+                //屏幕截图数据
+            }
+
+        }).onAudio(object :AudioCallBack{
+            override fun onAudio(buffer: ByteArray?, ts: Long) {
+                //音频数据
+            }
+
+        }).onStart({
+            //用户同意采集，开始采集数据
+        }).start()
+
+//静音
+ScreenShareKit.setMicrophoneMute(true)
+
+//停止采集
+ScreenShareKit.stop()
+```
+
 
 
 ## License
