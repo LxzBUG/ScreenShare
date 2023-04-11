@@ -17,6 +17,9 @@
 
 - 适配安卓高版本
 - 使用 MediaCodec 异步硬编码
+- 使用 ImageReader 获取屏幕截图数据
+- 支持 捕获应用内声音
+- 全局内容旋转监听
 - 编码信息可配置
 - 通知栏显示
 - 链式调用
@@ -38,7 +41,7 @@ allprojects {
 
 ```
 dependencies {
-    implementation 'com.github.LxzBUG:ScreenShare:1.0.0'
+    implementation 'com.github.LxzBUG:ScreenShare:1.1.6'
 }
 ```
 
