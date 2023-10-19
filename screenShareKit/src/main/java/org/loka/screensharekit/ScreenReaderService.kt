@@ -278,10 +278,8 @@ class ScreenReaderService : Service() {
                 stopProjection()
                 stopSelf()
             }else if (isResetCommand(it)){
-                if (encodeBuilder.screenDataType==EncodeBuilder.SCREEN_DATA_TYPE.H264){
                     stopCapture()
                     startCapture(encodeBuilder.encodeConfig.width,encodeBuilder.encodeConfig.height,encodeBuilder.encodeConfig.frameRate)
-                }
             }else if (isMuteCommand(it)){
                 val mute = it.getBooleanExtra(MUTE,false)
                 audioCapture?.setMicrophoneMute(mute)
