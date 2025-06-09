@@ -107,8 +107,8 @@ class EncodeBuilder(fragment: Fragment?,fragmentActivity: FragmentActivity?):Dev
     }
 
     fun stop(){
-        activity.startService(ScreenReaderService.getStopIntent(activity))
         device.setRotationListener(null)
+        activity.startService(ScreenReaderService.getStopIntent(activity))
     }
 
     fun setMicrophoneMute(mute:Boolean){

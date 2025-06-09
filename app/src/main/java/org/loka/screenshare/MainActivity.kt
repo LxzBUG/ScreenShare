@@ -27,15 +27,22 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun requestCapture() {
-
-        ScreenShareKit.init(this).onH264(object :H264CallBack{
-            override fun onH264(
-                buffer: ByteBuffer,
-                isKeyFrame: Boolean,
+        ScreenShareKit.setMicrophoneMute(true)
+        ScreenShareKit.init(this).config(screenDataType = EncodeBuilder.SCREEN_DATA_TYPE.RGBA).onRGBA(object :RGBACallBack{
+            override fun onRGBA(
+                rgba: ByteArray,
                 width: Int,
                 height: Int,
-                ts: Long
+                stride: Int,
+                rotation: Int,
+                rotationChanged: Boolean
             ) {
+                //屏幕截图数据
+            }
+
+        }).onAudio(object :AudioCallBack{
+            override fun onAudio(buffer: ByteArray?, ts: Long) {
+                //音频数据
             }
 
         }).onStart({

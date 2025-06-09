@@ -44,15 +44,16 @@ class ScreenReaderService : Service() {
 
     val stateLock = java.lang.Object()
     val mMutex = java.lang.Object()
-    private var rotation = 0
 
     ////rbga
-
+    private val lock = Object()
+    private var isImageProcessing = false
     private var rgbaData:ByteArray? = null
     private var rowStride = 0
     private val mQuit: AtomicBoolean = AtomicBoolean(false)
     private var mImgReader: ImageReader? = null
     private var mLastSendTSMs = 0L
+    private var isCurWidth = 0
 
     //audio
     private var  audioCapture :AudioCapture?=null
@@ -68,16 +69,16 @@ class ScreenReaderService : Service() {
     }
 
     private fun initImageReader(width:Int,height: Int){
-        mImgReader = ImageReader.newInstance(width,height, PixelFormat.RGBA_8888,2)
+        mImgReader = ImageReader.newInstance(width,height, PixelFormat.RGBA_8888,1)
         mImgReader?.setOnImageAvailableListener(ImageAvailableListener(),mHandler)
         surface = mImgReader?.surface
     }
 
     private fun isRotationChange():Boolean{
-        if (encodeBuilder.device_rotation==rotation){
+        if (encodeBuilder.encodeConfig.width==isCurWidth){
             return false
         }else{
-            rotation = encodeBuilder.device_rotation
+            isCurWidth = encodeBuilder.encodeConfig.width
             return true
         }
     }
@@ -89,40 +90,19 @@ class ScreenReaderService : Service() {
             createVirtualDisplay(width,height,surface)
         }else{
             synchronized(stateLock){
+                Log.d("屏幕采集","宽${width} 高${height}")
                 initImageReader(width, height)
                 createVirtualDisplay(width, height,surface)
             }
-            mQuit.set(false)
-            thread(true){
-                var preTS = 0L
-                var intervalTS = 1000 / frame //计算每帧需要等待的时间间隔
-                while (!mQuit.get()){
-                    val startTs = System.currentTimeMillis()
-                    if (preTS==0L){
-                        preTS = startTs
-                    }
-                    if (startTs-mLastSendTSMs>intervalTS){
-                        rgbaData?.let {
-                            encodeBuilder.rgbaCallback?.onRGBA(it,width,height,rowStride/4,encodeBuilder.device_rotation,isRotationChange())
-                            mLastSendTSMs = System.currentTimeMillis()
-                        }
-                    }
-                    val diffTS = startTs - preTS
-                    var waitTime = Math.max(intervalTS+intervalTS-diffTS,0)
-                    synchronized(mMutex){
-                        try {
-                            waitTime = Math.max(waitTime,50)
-                            mMutex.wait(waitTime)
-                        }catch (e:InterruptedException){
-                            e.printStackTrace()
-                        }
-                    }
-                    preTS = startTs
-                }
-            }
         }
-        audioCapture?.startRecording()
 
+    }
+
+    private fun startAudioCapture(){
+        audioCapture?.startRecording()
+    }
+    private fun stopAudioCapture(){
+        audioCapture?.stopRecording()
     }
 
     private fun stopCapture(){
@@ -139,11 +119,19 @@ class ScreenReaderService : Service() {
                     mMutex.notify()
                 }
             }
-            mVirtualDisplay?.release()
-            mImgReader?.close()
-        }
-        audioCapture?.stopRecording()
+            synchronized(lock) {
+                while (isImageProcessing) {
+                    try {
+                        lock.wait()
+                    } catch (e: InterruptedException) {
+                        e.printStackTrace()
+                    }
+                }
+                mVirtualDisplay?.release()
+                mImgReader?.close()
+            }
 
+        }
     }
 
 
@@ -164,7 +152,7 @@ class ScreenReaderService : Service() {
         val format = MediaFormat.createVideoFormat(MIME, width, height)
         format.apply {
             setInteger(MediaFormat.KEY_COLOR_FORMAT,MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface) //颜色格式
-            setInteger(MediaFormat.KEY_BIT_RATE, encodeBuilder.encodeConfig.bitrate) //码流
+            setInteger(MediaFormat.KEY_BIT_RATE, (encodeBuilder.encodeConfig.width*encodeBuilder.encodeConfig.width*encodeBuilder.encodeConfig.frameRate*0.5f).toInt()) //码流
             setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR)
             setInteger(MediaFormat.KEY_FRAME_RATE, frame) //帧数
             setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 2)
@@ -338,6 +326,7 @@ class ScreenReaderService : Service() {
                     }
                 }
                 startCapture(encodeBuilder.encodeConfig.width,encodeBuilder.encodeConfig.height,encodeBuilder.encodeConfig.frameRate)
+                startAudioCapture()
             }
         }
     }
@@ -348,6 +337,7 @@ class ScreenReaderService : Service() {
                 mMediaProjection?.stop()
             }
         }
+        stopAudioCapture()
     }
 
 
@@ -364,30 +354,46 @@ class ScreenReaderService : Service() {
     private inner class ImageAvailableListener:ImageReader.OnImageAvailableListener{
         override fun onImageAvailable(reader: ImageReader?) {
             reader?.let {
+                synchronized(lock) {
                 val image = it.acquireLatestImage()
                 if (image!=null){
                     try {
                         val planes = image.planes
-                        val buffer = planes.get(0).getBuffer()
+                        val buffer = planes[0].getBuffer()
                         if (buffer==null){
                             return
                         }
-                        rowStride = planes[0].rowStride
-                        val remaining = buffer.remaining()
-                        if (remaining<=0){
-                            return
-                        }
-                        val data = ByteArray(remaining)
-                        if (data.size==remaining){
-                            buffer.get(data,0,remaining)
-                            rgbaData=data
-                        }else{
-                        }
+                            isImageProcessing = true
+                            rowStride = planes[0].rowStride
+                            val remaining = buffer.remaining()
+                            if (remaining <= 0) {
+                                return
+                            }
+                            val data = ByteArray(remaining)
+                            if (data.size == remaining) {
+                                if (buffer.remaining() >= remaining) {
+                                    buffer.get(data, 0, remaining)
+                                    rgbaData = data
+                                    rgbaData?.let {
+
+                                encodeBuilder.rgbaCallback?.onRGBA(it.clone(),encodeBuilder.encodeConfig.width,encodeBuilder.encodeConfig.height,rowStride/4,encodeBuilder.device_rotation,isRotationChange())
+                                mLastSendTSMs = System.currentTimeMillis()
+                            }
+                                } else {
+                                    println("Not enough elements in the buffer")
+                                }
+                            }
+
                     }catch (e:Exception){
+
                     }finally {
                         image.close() // 及时关闭Image
+                        synchronized(lock) {
+                            isImageProcessing = false
+                            lock.notifyAll()
+                        }
                     }
-
+                }
                 }
             }
         }
