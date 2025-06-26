@@ -248,7 +248,7 @@ class ScreenReaderService : Service() {
                 isMuteCommand(it) -> {
                     val mute = it.getBooleanExtra(MUTE, false)
                     audioCapture?.setMicrophoneMute(mute)
-                }
+                }else->{}
             }
         }
         return super.onStartCommand(intent, flags, startId)
